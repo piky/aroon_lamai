@@ -3,7 +3,7 @@ const path = require('path');
 const { pool } = require('../src/config/database');
 
 async function runMigrations() {
-  const migrationsDir = path.join(__dirname, 'migrations');
+  const migrationsDir = path.join(__dirname);
   
   try {
     // Get list of migration files sorted by name
