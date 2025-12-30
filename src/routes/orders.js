@@ -456,6 +456,11 @@ router.patch('/:id/status',
   ],
   async (req, res, next) => {
     try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        throw new AppError('Invalid status', 400);
+      }
+
       const { id } = req.params;
       const { status } = req.body;
 
