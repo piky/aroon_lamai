@@ -3,6 +3,8 @@ const http = require('http');
 const { Server } = require('socket.io');
 const { configureMiddleware } = require('./config/middleware');
 const { pool } = require('./config/database');
+const { swaggerSpec } = require('./config/swagger');
+const swaggerUi = require('swagger-ui-express');
 
 const app = express();
 const server = http.createServer(app);
@@ -18,6 +20,9 @@ app.set('io', io);
 
 // Configure middleware
 configureMiddleware(app);
+
+// Swagger API documentation
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

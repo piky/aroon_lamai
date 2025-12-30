@@ -1,7 +1,149 @@
+/**
+ * @swagger
+ * tags:
+ *   name: Menu
+ *   description: Restaurant menu management
+ */
 const express = require('express');
 const db = require('../config/database');
 
 const router = express.Router();
+
+/**
+ * @swagger
+ * /menu:
+ *   get:
+ *     summary: Get full menu with categories and items
+ *     tags: [Menu]
+ *     security: []
+ *     parameters:
+ *       - in: query
+ *         name: available
+ *         schema:
+ *           type: boolean
+ *         description: Filter to only available items
+ *     responses:
+ *       200:
+ *         description: Full menu with categories
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     menu:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/MenuCategory'
+ */
+
+/**
+ * @swagger
+ * /menu/categories:
+ *   get:
+ *     summary: Get all menu categories
+ *     tags: [Menu]
+ *     security: []
+ *     responses:
+ *       200:
+ *         description: List of categories
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/MenuCategory'
+ */
+
+/**
+ * @swagger
+ * /menu/items:
+ *   get:
+ *     summary: Get menu items with filters
+ *     tags: [Menu]
+ *     security: []
+ *     parameters:
+ *       - in: query
+ *         name: category
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Filter by category ID
+ *       - in: query
+ *         name: available
+ *         schema:
+ *           type: boolean
+ *       - in: query
+ *         name: vegetarian
+ *         schema:
+ *           type: boolean
+ *       - in: query
+ *         name: vegan
+ *         schema:
+ *           type: boolean
+ *       - in: query
+ *         name: gluten_free
+ *         schema:
+ *           type: boolean
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Search in name and description
+ *     responses:
+ *       200:
+ *         description: List of menu items
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/MenuItem'
+ */
+
+/**
+ * @swagger
+ * /menu/items/{id}:
+ *   get:
+ *     summary: Get single menu item with modifiers
+ *     tags: [Menu]
+ *     security: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Menu item with modifiers
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   $ref: '#/components/schemas/MenuItem'
+ *       404:
+ *         description: Item not found
+ */
 
 // Get full menu with categories
 router.get('/', async (req, res, next) => {

@@ -71,7 +71,7 @@
 - [ ] **T-040**: Configure CORS for cross-origin requests
 - [ ] **T-041**: Create health check endpoint `/api/health`
 - [ ] **T-042**: Set up Zod schema validation or Pydantic models
-- [ ] **T-043**: Create API documentation (Swagger/OpenAPI)
+- [x] **T-043**: Create API documentation (Swagger/OpenAPI)
 
 #### Day 10-11: Menu API
 - [ ] **T-044**: Implement `GET /api/menu` - Fetch full menu with categories

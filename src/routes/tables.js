@@ -1,3 +1,9 @@
+/**
+ * @swagger
+ * tags:
+ *   name: Tables
+ *   description: Restaurant table management
+ */
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const { authenticate, authorize } = require('../middleware/auth');
@@ -6,6 +12,135 @@ const db = require('../config/database');
 const QRCode = require('qrcode');
 
 const router = express.Router();
+
+/**
+ * @swagger
+ * /tables:
+ *   get:
+ *     summary: Get all tables
+ *     tags: [Tables]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of tables with active order counts
+ */
+
+/**
+ * @swagger
+ * /tables/{id}:
+ *   get:
+ *     summary: Get single table
+ *     tags: [Tables]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Table details
+ *       404:
+ *         description: Table not found
+ */
+
+/**
+ * @swagger
+ * /tables:
+ *   post:
+ *     summary: Create a new table (admin only)
+ *     tags: [Tables]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - table_number
+ *               - capacity
+ *             properties:
+ *               table_number:
+ *                 type: string
+ *               capacity:
+ *                 type: integer
+ *                 minimum: 1
+ *     responses:
+ *       201:
+ *         description: Table created with QR code
+ *       409:
+ *         description: Table number already exists
+ */
+
+/**
+ * @swagger
+ * /tables/{id}:
+ *   put:
+ *     summary: Update a table (admin only)
+ *     tags: [Tables]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Table updated
+ *       404:
+ *         description: Table not found
+ */
+
+/**
+ * @swagger
+ * /tables/{id}:
+ *   delete:
+ *     summary: Delete a table (admin only) - soft delete
+ *     tags: [Tables]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Table deleted
+ *       404:
+ *         description: Table not found
+ */
+
+/**
+ * @swagger
+ * /tables/{id}/qr:
+ *   get:
+ *     summary: Get table QR code
+ *     tags: [Tables]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: QR code URL
+ */
 
 // Get all tables
 router.get('/', authenticate, async (req, res, next) => {

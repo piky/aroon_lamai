@@ -1,3 +1,9 @@
+/**
+ * @swagger
+ * tags:
+ *   name: Orders
+ *   description: Order management and kitchen display
+ */
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const { authenticate, authorize } = require('../middleware/auth');
@@ -5,6 +11,97 @@ const { AppError } = require('../middleware/errorHandler');
 const db = require('../config/database');
 
 const router = express.Router();
+
+/**
+ * @swagger
+ * /orders:
+ *   get:
+ *     summary: Get all orders with filters
+ *     tags: [Orders]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [pending, acknowledged, preparing, ready, served, completed, cancelled]
+ *       - in: query
+ *         name: table
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *       - in: query
+ *         name: waiter
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *       - in: query
+ *         name: date_from
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *       - in: query
+ *         name: date_to
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 50
+ *       - in: query
+ *         name: offset
+ *         schema:
+ *           type: integer
+ *           default: 0
+ *     responses:
+ *       200:
+ *         description: List of orders
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Order'
+ */
+
+/**
+ * @swagger
+ * /orders/{id}:
+ *   get:
+ *     summary: Get single order with items
+ *     tags: [Orders]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Order with items
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   $ref: '#/components/schemas/Order'
+ *       404:
+ *         description: Order not found
+ */
 
 // Get all orders (with filters)
 router.get('/', authenticate, async (req, res, next) => {
@@ -118,6 +215,122 @@ router.get('/:id', authenticate, async (req, res, next) => {
 });
 
 // Create order
+/**
+ * @swagger
+ * /orders:
+ *   post:
+ *     summary: Create a new order
+ *     tags: [Orders]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - table_id
+ *               - items
+ *             properties:
+ *               table_id:
+ *                 type: string
+ *                 format: uuid
+ *               items:
+ *                 type: array
+ *                 minItems: 1
+ *                 items:
+ *                   type: object
+ *                   required:
+ *                     - menu_item_id
+ *                     - quantity
+ *                   properties:
+ *                     menu_item_id:
+ *                       type: string
+ *                       format: uuid
+ *                     quantity:
+ *                       type: integer
+ *                       minimum: 1
+ *                     special_instructions:
+ *                       type: string
+ *               special_instructions:
+ *                 type: string
+ *               customer_session_id:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Order created
+ *       400:
+ *         description: Validation failed
+ *       404:
+ *         description: Table or item not found
+ */
+
+/**
+ * @swagger
+ * /orders/{id}/status:
+ *   patch:
+ *     summary: Update order status
+ *     tags: [Orders]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - status
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum: [pending, acknowledged, preparing, ready, served, completed, cancelled]
+ *     responses:
+ *       200:
+ *         description: Status updated
+ *       404:
+ *         description: Order not found
+ */
+
+/**
+ * @swagger
+ * /orders/{id}/cancel:
+ *   post:
+ *     summary: Cancel an order
+ *     tags: [Orders]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               reason:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Order cancelled
+ *       400:
+ *         description: Order cannot be cancelled
+ */
+
 router.post('/',
   authenticate,
   [

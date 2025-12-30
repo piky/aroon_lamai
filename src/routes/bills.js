@@ -1,3 +1,9 @@
+/**
+ * @swagger
+ * tags:
+ *   name: Bills
+ *   description: Billing and payment management
+ */
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const { authenticate, authorize } = require('../middleware/auth');
@@ -5,6 +11,151 @@ const { AppError } = require('../middleware/errorHandler');
 const db = require('../config/database');
 
 const router = express.Router();
+
+/**
+ * @swagger
+ * /bills/order/{orderId}:
+ *   get:
+ *     summary: Get bill for an order (preview)
+ *     tags: [Bills]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: orderId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Bill preview with items and totals
+ *       404:
+ *         description: Order not found
+ */
+
+/**
+ * @swagger
+ * /bills:
+ *   get:
+ *     summary: Get all bills (admin only)
+ *     tags: [Bills]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [pending, completed, failed]
+ *       - in: query
+ *         name: date_from
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *       - in: query
+ *         name: date_to
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *     responses:
+ *       200:
+ *         description: List of bills
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - admin only
+ */
+
+/**
+ * @swagger
+ * /bills/{id}:
+ *   get:
+ *     summary: Get bill by ID
+ *     tags: [Bills]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Bill details
+ *       404:
+ *         description: Bill not found
+ */
+
+/**
+ * @swagger
+ * /bills:
+ *   post:
+ *     summary: Create bill for an order (admin only)
+ *     tags: [Bills]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - order_id
+ *             properties:
+ *               order_id:
+ *                 type: string
+ *                 format: uuid
+ *               tip_amount:
+ *                 type: number
+ *                 default: 0
+ *               discount_amount:
+ *                 type: number
+ *                 default: 0
+ *     responses:
+ *       201:
+ *         description: Bill created
+ *       404:
+ *         description: Order not found
+ */
+
+/**
+ * @swagger
+ * /bills/{id}/pay:
+ *   patch:
+ *     summary: Mark bill as paid
+ *     tags: [Bills]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - payment_method
+ *             properties:
+ *               payment_method:
+ *                 type: string
+ *               payment_reference:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Bill marked as paid
+ *       400:
+ *         description: Bill not found or already paid
+ */
 
 // Get bill for order
 router.get('/order/:orderId', authenticate, async (req, res, next) => {
