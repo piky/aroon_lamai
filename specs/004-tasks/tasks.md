@@ -134,7 +134,7 @@
 - [x] **T-083**: Implement `PUT /api/orders/:id/items/:itemId` - Update item (via order update)
 - [x] **T-084**: Implement `DELETE /api/orders/:id/items/:itemId` - Remove item (via order update)
 - [x] **T-085**: Implement `POST /api/orders/:id/cancel` - Cancel order
-- [ ] **T-086**: Implement `POST /api/orders/:id/duplicate` - Duplicate order
+- [x] **T-086**: Implement `POST /api/orders/:id/duplicate` - Duplicate order (src/routes/orders.js:527-627)
 - [x] **T-087**: Write unit tests for order API endpoints (tests/orders.test.js - 12/12 passing)
 - [x] **T-088**: Add order total calculation tests
 

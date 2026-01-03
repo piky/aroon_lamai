@@ -282,4 +282,175 @@ describe('Orders Routes', () => {
       expect(response.status).toBe(400);
     });
   });
+
+  describe('POST /api/orders/:id/duplicate', () => {
+    it('should duplicate existing order successfully', async () => {
+      const originalOrder = {
+        id: 'original-order-1',
+        table_id: 'table-1',
+        table_number: 'T1',
+        status: 'completed',
+        customer_session_id: 'session-1',
+        subtotal: 50.00,
+        tax_amount: 3.50,
+        total_amount: 53.50,
+      };
+
+      const originalItems = [
+        { id: 'item-1', menu_item_id: 'menu-1', quantity: 2, current_price: 15.00, special_instructions: 'No onions' },
+        { id: 'item-2', menu_item_id: 'menu-2', quantity: 1, current_price: 20.00, special_instructions: null },
+      ];
+
+      const newOrder = {
+        id: 'new-order-1',
+        table_id: 'table-1',
+        status: 'pending',
+        table_number: 'T1',
+        waiter_name: 'Test User',
+      };
+
+      // Mock getting original order
+      db.query.mockResolvedValueOnce({ rows: [originalOrder] });
+      // Mock getting original order items
+      db.query.mockResolvedValueOnce({ rows: originalItems });
+      // Mock table validation
+      db.query.mockResolvedValueOnce({ rows: [{ id: 'table-1' }] });
+
+      // Mock transaction
+      mockClient.query
+        .mockResolvedValueOnce(undefined) // BEGIN
+        .mockResolvedValueOnce({ rows: [newOrder] }) // INSERT order
+        .mockResolvedValueOnce(undefined) // INSERT order item 1
+        .mockResolvedValueOnce(undefined) // INSERT order item 2
+        .mockResolvedValueOnce(undefined); // COMMIT
+
+      // Mock getting new order details
+      db.query
+        .mockResolvedValueOnce({ rows: [newOrder] })
+        .mockResolvedValueOnce({ rows: [{ id: 'new-item-1', item_name: 'Dish 1' }, { id: 'new-item-2', item_name: 'Dish 2' }] });
+
+      const response = await request(app)
+        .post('/api/orders/original-order-1/duplicate')
+        .set('Authorization', 'Bearer mock-token')
+        .send({});
+
+      expect(response.status).toBe(201);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.status).toBe('pending');
+      expect(response.body.message).toContain('duplicated');
+      expect(mockIo.emit).toHaveBeenCalledWith('order:new', expect.objectContaining({ isDuplicated: true }));
+    });
+
+    it('should duplicate order to different table', async () => {
+      const originalOrder = {
+        id: 'original-order-1',
+        table_id: 'table-1',
+        table_number: 'T1',
+        status: 'completed',
+      };
+
+      const originalItems = [
+        { id: 'item-1', menu_item_id: 'menu-1', quantity: 1, current_price: 10.00, special_instructions: null },
+      ];
+
+      const newTableId = '223e4567-e89b-12d3-a456-426614174000';
+      const newOrder = {
+        id: 'new-order-1',
+        table_id: newTableId,
+        status: 'pending',
+        table_number: 'T2',
+      };
+
+      // Mock getting original order
+      db.query.mockResolvedValueOnce({ rows: [originalOrder] });
+      // Mock getting original order items
+      db.query.mockResolvedValueOnce({ rows: originalItems });
+      // Mock new table validation
+      db.query.mockResolvedValueOnce({ rows: [{ id: newTableId }] });
+
+      // Mock transaction
+      mockClient.query
+        .mockResolvedValueOnce(undefined) // BEGIN
+        .mockResolvedValueOnce({ rows: [newOrder] }) // INSERT order
+        .mockResolvedValueOnce(undefined) // INSERT order item
+        .mockResolvedValueOnce(undefined); // COMMIT
+
+      // Mock getting new order details
+      db.query
+        .mockResolvedValueOnce({ rows: [newOrder] })
+        .mockResolvedValueOnce({ rows: [{ id: 'new-item-1', item_name: 'Dish' }] });
+
+      const response = await request(app)
+        .post('/api/orders/original-order-1/duplicate')
+        .set('Authorization', 'Bearer mock-token')
+        .send({ table_id: newTableId });
+
+      expect(response.status).toBe(201);
+      expect(response.body.data.table_id).toBe(newTableId);
+    });
+
+    it('should return 404 if original order not found', async () => {
+      db.query.mockResolvedValueOnce({ rows: [] });
+
+      const response = await request(app)
+        .post('/api/orders/non-existent/duplicate')
+        .set('Authorization', 'Bearer mock-token')
+        .send({});
+
+      expect(response.status).toBe(404);
+      expect(response.body.message).toContain('Order not found');
+    });
+
+    it('should return 404 if target table not found', async () => {
+      const originalOrder = {
+        id: 'original-order-1',
+        table_id: 'table-1',
+        table_number: 'T1',
+        status: 'completed',
+      };
+
+      const originalItems = [
+        { id: 'item-1', menu_item_id: 'menu-1', quantity: 1, current_price: 10.00, special_instructions: null },
+      ];
+
+      const invalidTableId = '223e4567-e89b-12d3-a456-426614174000';
+
+      // Mock getting original order
+      db.query.mockResolvedValueOnce({ rows: [originalOrder] });
+      // Mock getting original order items
+      db.query.mockResolvedValueOnce({ rows: originalItems });
+      // Mock invalid table validation
+      db.query.mockResolvedValueOnce({ rows: [] });
+
+      const response = await request(app)
+        .post('/api/orders/original-order-1/duplicate')
+        .set('Authorization', 'Bearer mock-token')
+        .send({ table_id: invalidTableId });
+
+      expect(response.status).toBe(404);
+      expect(response.body.message).toContain('Target table not found');
+    });
+
+    it('should return 400 if order has no items', async () => {
+      const originalOrder = {
+        id: 'original-order-1',
+        table_id: 'table-1',
+        table_number: 'T1',
+        status: 'completed',
+      };
+
+      // Mock getting original order
+      db.query.mockResolvedValueOnce({ rows: [originalOrder] });
+      // Mock getting original order items (empty)
+      db.query.mockResolvedValueOnce({ rows: [] });
+
+      const response = await request(app)
+        .post('/api/orders/original-order-1/duplicate')
+        .set('Authorization', 'Bearer mock-token')
+        .send({});
+
+      expect(response.status).toBe(400);
+      expect(response.body.message).toContain('no items');
+    });
+  });
 });
