@@ -119,14 +119,14 @@
 ### Week 5: Order Creation API
 
 #### Day 17-18: Order Endpoints
-- [ ] **T-073**: Implement `POST /api/orders` - Create new order
-- [ ] **T-074**: Validate order data (items, quantities, modifiers)
-- [ ] **T-075**: Calculate order total with modifiers
-- [ ] **T-076**: Set default order status to 'pending'
-- [ ] **T-077**: Implement `GET /api/orders/:id` - Get order details
-- [ ] **T-078**: Implement `GET /api/orders` - List orders with filters
-- [ ] **T-079**: Add status filter to orders list
-- [ ] **T-080**: Add date range filter to orders list
+- [x] **T-073**: Implement `POST /api/orders` - Create new order (src/routes/orders.js:334)
+- [x] **T-074**: Validate order data (items, quantities, modifiers) (express-validator)
+- [x] **T-075**: Calculate order total with modifiers (src/routes/orders.js:334-441)
+- [x] **T-076**: Set default order status to 'pending' (src/routes/orders.js:400)
+- [x] **T-077**: Implement `GET /api/orders/:id` - Get order details (src/routes/orders.js:179)
+- [x] **T-078**: Implement `GET /api/orders` - List orders with filters (src/routes/orders.js:107)
+- [x] **T-079**: Add status filter to orders list (src/routes/orders.js:107-177)
+- [x] **T-080**: Add date range filter to orders list (src/routes/orders.js:107-177)
 
 #### Day 19-20: Order Modifications
 - [x] **T-081**: Implement `PUT /api/orders/:id` - Update order (PATCH endpoint)
