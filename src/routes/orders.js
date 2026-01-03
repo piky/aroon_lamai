@@ -523,4 +523,166 @@ router.post('/:id/cancel', authenticate, authorize('waitstaff', 'admin'), async 
   }
 });
 
+/**
+ * @swagger
+ * /orders/{id}/duplicate:
+ *   post:
+ *     summary: Duplicate an existing order
+ *     tags: [Orders]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               table_id:
+ *                 type: string
+ *                 format: uuid
+ *                 description: Optional new table ID (defaults to original)
+ *     responses:
+ *       201:
+ *         description: Order duplicated successfully
+ *       404:
+ *         description: Original order not found
+ */
+
+// Duplicate order
+router.post('/:id/duplicate', authenticate, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { table_id: newTableId } = req.body;
+
+    // Get original order
+    const originalOrder = await db.query(
+      `SELECT o.*, t.table_number
+       FROM orders o
+       JOIN tables t ON o.table_id = t.id
+       WHERE o.id = $1`,
+      [id]
+    );
+
+    if (originalOrder.rows.length === 0) {
+      throw new AppError('Order not found', 404);
+    }
+
+    const order = originalOrder.rows[0];
+
+    // Get original order items
+    const originalItems = await db.query(
+      `SELECT oi.*, m.price as current_price
+       FROM order_items oi
+       JOIN menu_items m ON oi.menu_item_id = m.id
+       WHERE oi.order_id = $1`,
+      [id]
+    );
+
+    if (originalItems.rows.length === 0) {
+      throw new AppError('Order has no items to duplicate', 400);
+    }
+
+    // Use new table ID if provided, otherwise use original
+    const targetTableId = newTableId || order.table_id;
+
+    // Validate target table exists
+    const tableResult = await db.query(
+      'SELECT id FROM tables WHERE id = $1 AND is_active = true',
+      [targetTableId]
+    );
+
+    if (tableResult.rows.length === 0) {
+      throw new AppError('Target table not found', 404);
+    }
+
+    // Calculate totals for duplicated items
+    let subtotal = 0;
+    const orderItems = [];
+
+    for (const item of originalItems.rows) {
+      const itemTotal = item.current_price * item.quantity;
+      subtotal += itemTotal;
+
+      orderItems.push({
+        menu_item_id: item.menu_item_id,
+        quantity: item.quantity,
+        unit_price: item.current_price,
+        total_price: itemTotal,
+        special_instructions: item.special_instructions,
+      });
+    }
+
+    const taxRate = 0.07; // 7% tax
+    const taxAmount = subtotal * taxRate;
+    const totalAmount = subtotal + taxAmount;
+
+    // Start transaction
+    const client = await db.pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      // Create new order
+      const newOrderResult = await client.query(
+        `INSERT INTO orders (table_id, waiter_id, customer_session_id, subtotal, tax_amount, total_amount, special_instructions, status)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending')
+         RETURNING *`,
+        [targetTableId, req.user.role === 'waitstaff' ? req.user.id : null, order.customer_session_id, subtotal, taxAmount, totalAmount, `Duplicated from order ${id}`]
+      );
+
+      const newOrder = newOrderResult.rows[0];
+
+      // Create order items
+      for (const item of orderItems) {
+        await client.query(
+          `INSERT INTO order_items (order_id, menu_item_id, quantity, unit_price, total_price, special_instructions)
+           VALUES ($1, $2, $3, $4, $5, $6)`,
+          [newOrder.id, item.menu_item_id, item.quantity, item.unit_price, item.total_price, item.special_instructions]
+        );
+      }
+
+      await client.query('COMMIT');
+
+      // Emit real-time notification
+      const io = req.app.get('io');
+      io.to('kitchen').emit('order:new', { orderId: newOrder.id, tableId: targetTableId, isDuplicated: true });
+
+      // Return new order with items
+      const fullOrder = await db.query(
+        `SELECT o.*, t.table_number, u.name as waiter_name
+         FROM orders o
+         JOIN tables t ON o.table_id = t.id
+         LEFT JOIN users u ON o.waiter_id = u.id
+         WHERE o.id = $1`,
+        [newOrder.id]
+      );
+
+      const items = await db.query(
+        'SELECT oi.*, m.name as item_name FROM order_items oi JOIN menu_items m ON oi.menu_item_id = m.id WHERE oi.order_id = $1',
+        [newOrder.id]
+      );
+
+      res.status(201).json({
+        success: true,
+        data: { ...fullOrder.rows[0], items: items.rows },
+        message: 'Order duplicated successfully',
+      });
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
 module.exports = router;
