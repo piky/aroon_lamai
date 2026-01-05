@@ -164,7 +164,7 @@
 
 #### Day 24-26: Waitstaff Features
 
-- [ ] **T-096**: Create login screen with form validation
+- [x] **T-096**: Create login screen with form validation
 - [ ] **T-097**: Create table selection grid view
 - [ ] **T-098**: Build menu category tabs
 - [ ] **T-099**: Create menu item cards with images
