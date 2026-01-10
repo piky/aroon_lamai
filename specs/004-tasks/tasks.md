@@ -165,17 +165,17 @@
 #### Day 24-26: Waitstaff Features
 
 - [x] **T-096**: Create login screen with form validation
-- [ ] **T-097**: Create table selection grid view
-- [ ] **T-098**: Build menu category tabs
-- [ ] **T-099**: Create menu item cards with images
-- [ ] **T-100**: Implement shopping cart (add/remove/update)
-- [ ] **T-101**: Add item customization modal (modifiers)
-- [ ] **T-102**: Create order review summary screen
-- [ ] **T-103**: Implement order submission with loading state
-- [ ] **T-104**: Add order success confirmation
-- [ ] **T-105**: Create order history list view
-- [ ] **T-106**: Add order status badges
-- [ ] **T-107**: Implement pull-to-refresh for orders
+- [x] **T-097**: Create table selection grid view (client/src/pages/TablesPage.jsx)
+- [x] **T-098**: Build menu category tabs (client/src/pages/MenuPage.jsx)
+- [x] **T-099**: Create menu item cards with images (client/src/pages/MenuPage.jsx)
+- [x] **T-100**: Implement shopping cart (add/remove/update) (client/src/store/cartSlice.js)
+- [x] **T-101**: Add item customization modal (modifiers) (client/src/components/common/ItemCustomizationModal.jsx)
+- [x] **T-102**: Create order review summary screen (client/src/components/common/OrderReview.jsx)
+- [x] **T-103**: Implement order submission with loading state (client/src/components/common/OrderReview.jsx)
+- [x] **T-104**: Add order success confirmation (client/src/pages/OrderSuccessPage.jsx)
+- [x] **T-105**: Create order history list view (client/src/pages/OrdersPage.jsx)
+- [x] **T-106**: Add order status badges (client/src/pages/OrdersPage.jsx)
+- [x] **T-107**: Implement pull-to-refresh for orders (client/src/pages/OrdersPage.jsx)
 
 ---
 

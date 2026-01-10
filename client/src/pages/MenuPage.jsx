@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Search, Plus } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
+import { Search, Plus, ShoppingCart, RefreshCw } from "lucide-react";
 import { Layout } from "../components/layout";
 import {
   Card,
@@ -10,17 +11,29 @@ import {
   Spinner,
   EmptyState,
 } from "../components/common";
+import { ItemCustomizationModal } from "../components/common/ItemCustomizationModal";
+import { OrderReview } from "../components/common/OrderReview";
 import {
   fetchMenu,
   setSelectedCategory,
   setSearchQuery,
 } from "../store/menuSlice";
+import { addToCart } from "../store/cartSlice";
 
 export default function MenuPage() {
   const dispatch = useDispatch();
   const { categories, items, selectedCategory, searchQuery, loading } =
     useSelector((state) => state.menu);
+  const { totalItems } = useSelector((state) => state.cart);
+  const [searchParams] = useSearchParams();
+  const tableId = searchParams.get("tableId");
+
   const [localSearch, setLocalSearch] = useState(searchQuery);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [showCustomization, setShowCustomization] = useState(false);
+  const [showReview, setShowReview] = useState(false);
+  const [addingToCart, setAddingToCart] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     dispatch(fetchMenu());
@@ -45,6 +58,30 @@ export default function MenuPage() {
     }, 300);
   };
 
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await dispatch(fetchMenu());
+    setRefreshing(false);
+  };
+
+  const handleItemClick = (item) => {
+    setSelectedItem(item);
+    setShowCustomization(true);
+  };
+
+  const handleAddToCart = async (customization) => {
+    setAddingToCart(true);
+    try {
+      await dispatch(addToCart(customization));
+      setShowCustomization(false);
+      setSelectedItem(null);
+    } catch (error) {
+      console.error("Failed to add to cart:", error);
+    } finally {
+      setAddingToCart(false);
+    }
+  };
+
   if (loading && items.length === 0) {
     return (
       <Layout title="Menu">
@@ -57,15 +94,25 @@ export default function MenuPage() {
 
   return (
     <Layout title="Menu" showBottomNav={false}>
-      <div className="space-y-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search menu..."
-            value={localSearch}
-            onChange={handleSearch}
-            className="pl-10"
-          />
+      <div className="space-y-4 pb-24">
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search menu..."
+              value={localSearch}
+              onChange={handleSearch}
+              className="pl-10"
+            />
+          </div>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={handleRefresh}
+            disabled={refreshing}
+          >
+            <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
+          </Button>
         </div>
 
         {categories.length > 0 && (
@@ -109,7 +156,11 @@ export default function MenuPage() {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2">
             {filteredItems.map((item) => (
-              <Card key={item.id} className="overflow-hidden">
+              <Card
+                key={item.id}
+                className="overflow-hidden cursor-pointer transition-shadow hover:shadow-md"
+                onClick={() => item.available !== false && handleItemClick(item)}
+              >
                 {item.image && (
                   <img
                     src={item.image}
@@ -133,14 +184,12 @@ export default function MenuPage() {
                     {item.available === false && (
                       <Badge variant="secondary">Unavailable</Badge>
                     )}
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={item.available === false}
-                    >
-                      <Plus className="mr-1 h-4 w-4" />
-                      Add
-                    </Button>
+                    {item.available !== false && (
+                      <Button size="sm" variant="outline">
+                        <Plus className="mr-1 h-4 w-4" />
+                        Add
+                      </Button>
+                    )}
                   </div>
                 </div>
               </Card>
@@ -148,6 +197,39 @@ export default function MenuPage() {
           </div>
         )}
       </div>
+
+      {/* Floating Cart Button */}
+      {totalItems > 0 && (
+        <div className="fixed bottom-20 left-4 right-4 md:left-auto md:right-4 md:w-80">
+          <Button
+            className="w-full shadow-lg"
+            size="lg"
+            onClick={() => setShowReview(true)}
+          >
+            <ShoppingCart className="mr-2 h-5 w-5" />
+            View Cart ({totalItems} items)
+          </Button>
+        </div>
+      )}
+
+      {/* Item Customization Modal */}
+      <ItemCustomizationModal
+        isOpen={showCustomization}
+        onClose={() => {
+          setShowCustomization(false);
+          setSelectedItem(null);
+        }}
+        item={selectedItem}
+        onAddToCart={handleAddToCart}
+        loading={addingToCart}
+      />
+
+      {/* Order Review Drawer */}
+      <OrderReview
+        isOpen={showReview}
+        onClose={() => setShowReview(false)}
+        tableId={tableId}
+      />
     </Layout>
   );
 }
