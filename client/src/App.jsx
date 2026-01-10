@@ -5,6 +5,7 @@ import LoginPage from "./pages/LoginPage";
 import TablesPage from "./pages/TablesPage";
 import OrdersPage from "./pages/OrdersPage";
 import MenuPage from "./pages/MenuPage";
+import OrderSuccessPage from "./pages/OrderSuccessPage";
 import { loadCartFromDB } from "./store/cartSlice";
 import { getProfile } from "./store/authSlice";
 
@@ -64,6 +65,14 @@ function App() {
         element={
           <ProtectedRoute>
             <MenuPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/orders/success"
+        element={
+          <ProtectedRoute>
+            <OrderSuccessPage />
           </ProtectedRoute>
         }
       />

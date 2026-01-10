@@ -1,7 +1,7 @@
-import { useEffect } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { Clock, DollarSign } from "lucide-react";
+import { Clock, DollarSign, RefreshCw } from "lucide-react";
 import { Layout } from "../components/layout";
 import { Card, Badge, Spinner, EmptyState, Button } from "../components/common";
 import { fetchOrders, loadLocalOrders } from "../store/ordersSlice";
@@ -10,11 +10,45 @@ export default function OrdersPage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { orders, localOrders, loading } = useSelector((state) => state.orders);
+  const [refreshing, setRefreshing] = useState(false);
+  const [isPulling, setIsPulling] = useState(false);
+  const pullStartY = useRef(0);
+  const containerRef = useRef(null);
 
   useEffect(() => {
     dispatch(fetchOrders());
     dispatch(loadLocalOrders());
   }, [dispatch]);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await dispatch(fetchOrders());
+      await dispatch(loadLocalOrders());
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const handleTouchStart = (e) => {
+    pullStartY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchMove = (e) => {
+    if (window.scrollY === 0) {
+      const currentY = e.touches[0].clientY;
+      if (currentY > pullStartY.current) {
+        setIsPulling(true);
+      }
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (isPulling) {
+      handleRefresh();
+      setIsPulling(false);
+    }
+  };
 
   const allOrders = [...localOrders, ...orders];
 
@@ -69,6 +103,13 @@ export default function OrdersPage() {
 
   return (
     <Layout title="Orders">
+      {/* Pull-to-refresh indicator */}
+      {isPulling && (
+        <div className="fixed top-0 left-0 right-0 z-10 flex justify-center py-2 bg-background/80 backdrop-blur-sm">
+          <RefreshCw className="h-5 w-5 animate-spin text-primary" />
+        </div>
+      )}
+
       {allOrders.length === 0 ? (
         <EmptyState
           icon={DollarSign}
@@ -77,7 +118,19 @@ export default function OrdersPage() {
           action={<Button onClick={() => navigate("/")}>Go to Tables</Button>}
         />
       ) : (
-        <div className="space-y-4">
+        <div
+          className="space-y-4"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
+          {refreshing && (
+            <div className="flex items-center justify-center py-2">
+              <RefreshCw className="h-4 w-4 animate-spin text-primary mr-2" />
+              <span className="text-sm text-muted-foreground">Refreshing...</span>
+            </div>
+          )}
+
           {localOrders.length > 0 && (
             <div className="rounded-lg border border-warning-500/50 bg-warning-500/10 p-3">
               <p className="text-sm font-medium text-warning-500">
