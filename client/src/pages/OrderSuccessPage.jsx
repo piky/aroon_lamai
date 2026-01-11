@@ -2,10 +2,10 @@ import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useLocation } from "react-router-dom";
 import { CheckCircle, Clock, MapPin } from "lucide-react";
-import { Button, Card } from "./index";
-import { fetchOrders } from "../../store/ordersSlice";
+import { Button, Card } from "../components/common";
+import { fetchOrders } from "../store/ordersSlice";
 
-export function OrderSuccess() {
+export default function OrderSuccess() {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
