@@ -222,7 +222,7 @@ export default function LoginPage() {
             </p>
             <div className="text-xs text-muted-foreground text-center space-y-1">
               <p>
-                <strong>Email:</strong> staff@aroonlamai.com
+                <strong>Email:</strong> john@aroonlamai.com
               </p>
               <p>
                 <strong>Password:</strong> password123

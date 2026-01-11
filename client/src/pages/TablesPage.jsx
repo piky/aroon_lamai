@@ -14,7 +14,7 @@ export default function TablesPage() {
     const fetchTables = async () => {
       try {
         const response = await tablesAPI.getTables();
-        setTables(response.data);
+        setTables(response.data.data);
       } catch (error) {
         console.error("Failed to fetch tables:", error);
       } finally {
@@ -80,7 +80,7 @@ export default function TablesPage() {
               <div className="mb-2 rounded-full bg-muted p-3">
                 <Table className="h-6 w-6" />
               </div>
-              <span className="text-lg font-bold">{table.number}</span>
+              <span className="text-lg font-bold">Table {table.table_number || table.number}</span>
               <Badge variant={getStatusColor(table.status)} className="mt-2">
                 {getStatusText(table.status)}
               </Badge>
